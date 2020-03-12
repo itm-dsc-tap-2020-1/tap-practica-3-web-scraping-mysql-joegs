@@ -49,27 +49,35 @@ def save_to_database(pagina: str, cursor: mysql.cursor.MySQLCursor):
         insert_url(url, cursor)
 
 
+def get_number_of_entries(cursor):
+    cursor.execute("SELECT * FROM paginas")
+    rows = cursor.fetchall()
+    return len(rows)
+
+
 conexion = mysql.connect(host="localhost", user="root", passwd="", db="paginas")
 cursor = conexion.cursor(buffered=True)
 
 website = input("Ingrese una pagina web: ")
 save_to_database(website, cursor)
 
-while True:
-    cursor.execute("SELECT * FROM paginas WHERE status=FALSE")
-    pagina = cursor.fetchone()
-    if not pagina:
-        break
-    url = pagina[0]
-    try:
-        save_to_database(url, cursor)
-    except Exception:
+try:
+    while True:
+        cursor.execute("SELECT * FROM paginas WHERE status=FALSE")
+        pagina = cursor.fetchone()
+        if not pagina:
+            break
+        url = pagina[0]
+        try:
+            save_to_database(url, cursor)
+        except Exception:
+            set_url_as_visited(url, cursor)
+            continue
         set_url_as_visited(url, cursor)
-        continue
-    set_url_as_visited(url, cursor)
-    cursor.execute("SELECT * FROM paginas")
-    rows = cursor.fetchall()
-    print(f"Entradas: {len(rows)}")
-    conexion.commit()
+        entries_number = get_number_of_entries(cursor)
+        print(f"Entradas: {entries_number}")
+        conexion.commit()
+except KeyboardInterrupt:
+    pass
 
 conexion.close()
